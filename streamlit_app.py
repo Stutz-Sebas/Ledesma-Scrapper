@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 import xlsxwriter
-import scraper_alternativa
+import script_scrapper as scraper
 import io
 
 if 'data' not in st.session_state:
@@ -17,7 +17,7 @@ col1, col2, col3 = st.columns(3)
 btn_obtener = col1.button('Obtener Datos')
 if btn_obtener:
     with st.spinner('Obteniendo datos...'):
-        data, data_scrap = scraper_alternativa.main()
+        data, data_scrap = scraper.main()
     st.session_state.data = data
     st.session_state.data_scrap = data_scrap
 

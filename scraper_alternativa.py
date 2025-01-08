@@ -18,6 +18,7 @@ def main():
     df_plantilla = pd.read_csv(archivo, header=[0, 1, 2], index_col=[0, 1])
     
     df_cordiez = cordiez()
+    
     #df_carre = carrefour()
     #df_coto = coto()
     #productos_scrapeados = pd.concat([df_cordiez, df_carre, df_coto])
@@ -171,7 +172,6 @@ def clasificar_producto(nombre_producto):
 
     return tipo, descripcion
 
-
 def cargar_precios_en_planilla(planilla, datos_scrapeados):
     supermercados_nacionales = ['Coto', 'CRF']
     supermercados_interior = ['Cordiez (CBA)']
@@ -226,7 +226,7 @@ def cordiez():
             print("Datos JSON cargados correctamente.")
         except json.JSONDecodeError as e:
             print(f"Error al cargar JSON: {e}")
-            return pd.DataFrame()  # Retornar un DataFrame vacío en caso de error
+            return pd.DataFrame()
     else:
         print("El contenido no es JSON. Aquí está el texto sin procesar:")
         print(response.text)
@@ -237,16 +237,16 @@ def cordiez():
 
     # Verificar si la solicitud fue exitosa
     if response.status_code == 200:
-        for producto in data_json:  # Iterar sobre la lista de productos
+        for producto in data_json:  
             nombre = producto.get('productName', 'Nombre no encontrado')
             marca = producto.get('brand', 'Marca no encontrada')
-            for item in producto.get('items', []):  # Itera sobre cada elemento en 'items'
-                for seller in item.get('sellers', []):  # Itera sobre cada vendedor en 'sellers'
+            for item in producto.get('items', []):  
+                for seller in item.get('sellers', []):  
                     precioBase = seller.get('commertialOffer', {}).get('PriceWithoutDiscount', None)
                     precioOferta = seller.get('commertialOffer', {}).get('Price', None)
                     productos_lista.append([supermercado, nombre, marca, precioBase, precioOferta])
         
-        # Crear el DataFrame después de llenar la lista
+        
         df = pd.DataFrame(productos_lista, columns=['Supermercado', 'Producto', 'Marca', 'Precio', 'Oferta'])
         return df
     
@@ -259,20 +259,7 @@ def carrefour():
     
     # Encabezados (simula el navegador)
     headers = {
-        'Accept': '*/*',
-        'Accept-Encoding': 'gzip, deflate, br, zstd',
-        'Accept-Language': 'es-ES,es;q=0.9',
-        'Connection': 'keep-alive',
-        'Cookie': 'VtexRCSessionIdv7=6e9d51a5-c74b-44c9-9971-b0bb8ba81dde; VtexRCMacIdv7=b09b54e3-c9ec-4d47-b552-e10c120cf012; _gcl_au=1.1.1492931608.1735305151; _gid=GA1.3.174540012.1735305151; __kdtv=t%3D1735305151397%3Bi%3D29924344dc044809a3213ead87a593f186e41744; _kdt=%7B%22t%22%3A1735305151397%2C%22i%22%3A%2229924344dc044809a3213ead87a593f186e41744%22%7D; VTEXSC=sc=1; ISSMB=ScreenMedia=0&UserAcceptMobile=False; SGTS=8915406B30546143C61DBAC54C4F3D27; CheckoutOrderFormOwnership=; vtex_segment=eyJjYW1wYWlnbnMiOm51bGwsImNoYW5uZWwiOiIxIiwicHJpY2VUYWJsZXMiOm51bGwsInJlZ2lvbklkIjpudWxsLCJ1dG1fY2FtcGFpZ24iOm51bGwsInV0bV9zb3VyY2UiOm51bGwsInV0bWlfY2FtcGFpZ24iOm51bGwsImN1cnJlbmN5Q29kZSI6IkFSUyIsImN1cnJlbmN5U3ltYm9sIjoiJCIsImNvdW50cnlDb2RlIjoiQVJHIiwiY3VsdHVyZUluZm8iOiJlcy1BUiIsImNoYW5uZWxQcml2YWN5IjoicHVibGljIn0; _fbp=fb.2.1735305151872.799355841648030922; vtex_session=eyJhbGciOiJFUzI1NiIsImtpZCI6IjgxODcwMTM5LWNmMTYtNGRiNi1hZGUzLWQ4NDY3ODgyYTMwYyIsInR5cCI6IkpXVCJ9.eyJhY2NvdW50LmlkIjpbXSwiaWQiOiJiMzJlODcyYS0wM2E3LTRiY2QtYmNkNS00OTg2NTBmYWRjODIiLCJ2ZXJzaW9uIjoyLCJzdWIiOiJzZXNzaW9uIiwiYWNjb3VudCI6InNlc3Npb24iLCJleHAiOjE3MzU5OTYzNTEsImlhdCI6MTczNTMwNTE1MSwianRpIjoiODVjODQwOTItMDMxZi00YzViLTgwYmItZjc0NjM2MGFmNzgwIiwiaXNzIjoic2Vzc2lvbi9kYXRhLXNpZ25lciJ9.CP467FN9KUCLKvjI5ULnhZtIKfqU_52zfp78eM64m0t1bKrY0JiJY8HvtfAWMikleRqGp1oBKrgroCu_CjODFg; checkout.vtex.com=__ofid=1a68c780b971418db8416b6362253a0d; _gat_UA-125149805-1=1; _ga_NY76PB0BZ5=GS1.1.1735305151.1.1.1735305246.59.0.0; _ga=GA1.1.1972036693.1735305151; janus_sid=8e6ef8ce-a900-44ea-bbe1-d2301a538f6c',  # Coloca todas las cookies necesarias aquí
-        'Host': 'www.cordiez.com.ar',
-        'Referer': 'https://www.cordiez.com.ar/desayuno-y-merienda/azucar-y-edulcorante/',
-        'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': '"Windows"',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-origin',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+
     }
     
     response = requests.get(url)
@@ -280,15 +267,13 @@ def carrefour():
     content_type = response.headers.get("Content-Type", "")
     print(f"Content-Type: {content_type}")
 
-    # Si el contenido es JSON
     if "application/json" in content_type:
         try:
-            # Parsear directamente como JSON
             data_json = response.json()
             print("Datos JSON cargados correctamente.")
         except json.JSONDecodeError as e:
             print(f"Error al cargar JSON: {e}")
-            return pd.DataFrame()  # Retornar un DataFrame vacío en caso de error
+            return pd.DataFrame() 
     else:
         print("El contenido no es JSON. Aquí está el texto sin procesar:")
         print(response.text)
@@ -297,18 +282,59 @@ def carrefour():
     productos_lista = []
     supermercado = 'CRF'
 
-    # Verificar si la solicitud fue exitosa
     if response.status_code == 200:
-        for producto in data_json:  # Iterar sobre la lista de productos
+        for producto in data_json: 
             nombre = producto.get('productName', 'Nombre no encontrado')
             marca = producto.get('brand', 'Marca no encontrada')
-            for item in producto.get('items', []):  # Itera sobre cada elemento en 'items'
-                for seller in item.get('sellers', []):  # Itera sobre cada vendedor en 'sellers'
+            for item in producto.get('items', []):
+                for seller in item.get('sellers', []):
                     precioBase = seller.get('commertialOffer', {}).get('PriceWithoutDiscount', None)
                     precioOferta = seller.get('commertialOffer', {}).get('Price', None)
                     productos_lista.append([supermercado, nombre, marca, precioBase, precioOferta])
         
-        # Crear el DataFrame después de llenar la lista
+        df = pd.DataFrame(productos_lista, columns=['Supermercado', 'Producto', 'Marca', 'Precio', 'Oferta'])
+        return df
+    
+    else:
+        print(f"Error en la solicitud: {response.status_code}")
+        return pd.DataFrame()
+    
+def scrapper(link, super, nombreProducto, marcaProducto, precioBase, precioOferta):
+    url = link
+    headers = {
+
+    }
+    
+    response = requests.get(url)
+
+    content_type = response.headers.get("Content-Type", "")
+    print(f"Content-Type: {content_type}")
+
+    if "application/json" in content_type:
+        try:
+            data_json = response.json()
+            print("Datos JSON cargados correctamente.")
+        except json.JSONDecodeError as e:
+            print(f"Error al cargar JSON: {e}")
+            return pd.DataFrame() 
+    else:
+        print("El contenido no es JSON. Aquí está el texto sin procesar:")
+        print(response.text)
+        return pd.DataFrame()
+    
+    productos_lista = []
+    supermercado = super
+
+    if response.status_code == 200:
+        for producto in data_json: 
+            nombre = producto.get(str(nombreProducto), 'Nombre no encontrado')
+            marca = producto.get(str(marcaProducto), 'Marca no encontrada')
+            for item in producto.get('items', []):
+                for seller in item.get('sellers', []):
+                    precio = seller.get(str(precioBase), {}).get('PriceWithoutDiscount', None)
+                    oferta = seller.get(str(precioOferta), {}).get('Price', None)
+                    productos_lista.append([supermercado, nombre, marca, precio, oferta])
+        
         df = pd.DataFrame(productos_lista, columns=['Supermercado', 'Producto', 'Marca', 'Precio', 'Oferta'])
         return df
     

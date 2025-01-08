@@ -11,26 +11,6 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
 
-def main():
-    archivo = 'WebScraping\Estructura_Con_Precio_Oferta_0.csv'
-    df_plantilla = pd.read_csv(archivo, header=[0, 1, 2], index_col=[0, 1])
-    
-    df_cordiez = cordiez()
-    df_carre = carrefour()
-    #df_coto = coto()
-    #productos_scrapeados = pd.concat([df_cordiez, df_carre, df_coto])
-    productos_scrapeados = pd.concat([df_cordiez, df_carre])
-
-    productos_scrapeados[['Tipo', 'Descripción']] = productos_scrapeados['Producto'].apply(
-        lambda producto: pd.Series(clasificar_producto(producto))
-    )
-    
-    productos_scrapeados.to_csv('Prueba.csv')
-
-    cargar_precios_en_planilla(df_plantilla, productos_scrapeados)
-
-    return df_plantilla, productos_scrapeados
-
 def normalizar_texto(texto):
     # Convierte el texto en minusculas y elimina acentos
     import unicodedata
@@ -219,7 +199,7 @@ def cordiez():
 
     soup = BeautifulSoup(html, 'html.parser')
 
-    contenedor = soup.find('div', class_='row', attrs={'data-next': '_next_searched_products'})
+    contenedor = soup.find('div', class_='col-xl-10 col-lg-9 col-md-8 col-12')
     productos = contenedor.find_all('div', class_='product')
 
 
@@ -276,8 +256,8 @@ def carrefour():
 
     soup = BeautifulSoup(html, 'html.parser')
 
-    # contenedor = soup.find('div', class_='pr0  vtex-flex-layout-0-x-stretchChildrenWidth   flex')
-    productos = soup.find_all('div', class_='valtech-carrefourar-search-result-2-x-galleryItem valtech-carrefourar-search-result-2-x-galleryItem--normal pa4')
+    contenedor = soup.find('div', class_='valtech-carrefourar-search-result-3-x-gallery flex flex-row flex-wrap items-stretch bn ph1 na4 pl9-l')
+    productos = contenedor.find_all('div', class_='valtech-carrefourar-search-result-2-x-galleryItem valtech-carrefourar-search-result-2-x-galleryItem--normal pa4')
 
     productos_lista = []
     supermercado = 'CRF'
@@ -286,7 +266,59 @@ def carrefour():
         titulo_div = producto.find('span', class_='vtex-product-summary-2-x-productBrand vtex-product-summary-2-x-brandName t-body')
         articulo = titulo_div.text.strip() if titulo_div else 'Nombre no encontrado'
         
-        precio_contenedor = producto.find('span', class_='valtech-carrefourar-product-price-0-x-currencyContainer')
+        precio_contenedor = producto.find('span', class_='valtech-carrefourar-product-price-0-x-listPriceValue')
+        
+        if precio_contenedor:
+            precio_texto = precio_contenedor.get_text(strip=True).replace(u'\xa0', u' ')
+
+            precio = float(precio_texto.replace('$', '').replace('.', '').replace(',', '.').strip())
+        else:
+            precio = np.nan
+
+        productos_lista.append([supermercado, articulo, precio])
+
+    df = pd.DataFrame(productos_lista, columns=['Supermercado', 'Producto', 'Precio'])
+    return df
+
+def anonima():
+    url = 'https://supermercado.laanonimaonline.com/almacen/endulzantes/n2_21/'
+
+    options = Options()
+    options.add_argument("--headless=new")
+    options.add_argument('--disable-gpu')
+    options.add_argument('--no-sandbox') 
+    options.add_argument('--disable-dev-shm-usage')
+
+    driver = webdriver.Chrome(options=options)
+    driver.get(url)
+
+    last_height = driver.execute_script("return document.body.scrollHeight")
+
+    while True:
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(5)
+        new_height = driver.execute_script("return document.body.scrollHeight")
+
+        if new_height == last_height:
+            break
+        last_height = new_height
+
+    html = driver.page_source
+    driver.quit()
+
+    soup = BeautifulSoup(html, 'html.parser')
+
+    contenedor = soup.find('div', class_='caja1 producto')
+    productos = contenedor.find_all('div', class_='producto item text_center centrar_img fijar cuadro clearfix')
+
+    productos_lista = []
+    supermercado = 'Anonima'
+
+    for producto in productos:
+        titulo_div = producto.find('div', class_='col1_listado')
+        articulo = titulo_div.text.strip() if titulo_div else 'Nombre no encontrado'
+        
+        precio_contenedor = producto.find('div', class_='precio-promo')
         
         if precio_contenedor:
             precio_texto = precio_contenedor.get_text(strip=True).replace(u'\xa0', u' ')
@@ -399,3 +431,77 @@ def disco():
 
     df = pd.DataFrame(productos_lista, columns=['Supermercado', 'Producto', 'Precio'])
     return df"""
+
+def dia():
+    url = 'https://diaonline.supermercadosdia.com.ar/desayuno/infusiones-y-endulzantes/azucar'
+
+    options = Options()
+    options.add_argument("--headless=new")
+    options.add_argument('--disable-gpu')
+    options.add_argument('--no-sandbox') 
+    options.add_argument('--disable-dev-shm-usage')
+
+    driver = webdriver.Chrome(options=options)
+    driver.get(url)
+
+    last_height = driver.execute_script("return document.body.scrollHeight")
+
+    while True:
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(5)
+        new_height = driver.execute_script("return document.body.scrollHeight")
+
+        if new_height == last_height:
+            break
+        last_height = new_height
+
+    html = driver.page_source
+    driver.quit()
+
+    soup = BeautifulSoup(html, 'html.parser')
+
+    contenedor = soup.find('div', id='gallery-layout-container')
+    if not contenedor: print('No se encontró el contenedor')
+    productos = contenedor.find_all('div', class_='diaio-add-to-cart-custom-layout-0-x-product-summary-container')
+    if not productos: print('No se encontraron productos')
+    productos_lista = []
+    supermercado = 'Dia'
+
+    for producto in productos:
+        titulo_div = producto.find('span', class_='vtex-product-summary-2-x-productBrand vtex-product-summary-2-x-brandName t-body')
+        articulo = titulo_div.text.strip() if titulo_div else 'Nombre no encontrado'
+        
+        precio_contenedor = producto.find('span', class_='vtex-product-price-1-x-sellingPriceValue')
+        if not precio_contenedor: print('No se encontró el precio')
+        if precio_contenedor:
+            precio_texto = precio_contenedor.get_text(strip=True).replace(u'\xa0', u' ')
+
+            precio = float(precio_texto.replace('$', '').replace('.', '').replace(',', '.').strip())
+        else:
+            precio = np.nan
+
+        productos_lista.append([supermercado, articulo, precio])
+
+    df = pd.DataFrame(productos_lista, columns=['Supermercado', 'Producto', 'Precio'])
+    return df
+
+def main():
+    archivo = 'Estructura_Con_Precio_Oferta_0.csv'
+    df_plantilla = pd.read_csv(archivo, header=[0, 1, 2], index_col=[0, 1])
+    
+    df_cordiez = cordiez()
+    df_dia = dia()
+    df_carre = carrefour()
+    df_anonima = anonima()
+    #productos_scrapeados = pd.concat([df_cordiez, df_carre, df_coto])
+    productos_scrapeados = pd.concat([df_dia, df_cordiez, df_carre, df_anonima])
+
+    productos_scrapeados[['Tipo', 'Descripción']] = productos_scrapeados['Producto'].apply(
+        lambda producto: pd.Series(clasificar_producto(producto))
+    )
+    
+    productos_scrapeados.to_csv('Prueba.csv')
+
+    cargar_precios_en_planilla(df_plantilla, productos_scrapeados)
+
+    return df_plantilla, productos_scrapeados
